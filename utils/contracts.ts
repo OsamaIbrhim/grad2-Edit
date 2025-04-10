@@ -88,11 +88,18 @@ export const registerUser = async (role: string) => {
   }
 
   try {
-    const provider = await getProvider();
-    const signer = await getSigner();
-    signer.address.toLowerCase();
-    const contractAddress = process.env.NEXT_PUBLIC_IDENTITY_CONTRACT_ADDRESS;
+    // Error.1 missing revert data  
+    // const provider = await getProvider();
+    
+    // solve error.1
+    if (!window.ethereum) {
+      throw new Error('No ethereum provider found');
+    }
+    const provider = new ethers.BrowserProvider(window.ethereum);
 
+    const signer = await provider.getSigner();
+    const contractAddress = process.env.NEXT_PUBLIC_IDENTITY_CONTRACT_ADDRESS;
+    
     if (!contractAddress) {
       throw new Error('Contract address is not configured');
     }
@@ -111,7 +118,12 @@ export const registerUser = async (role: string) => {
       throw new Error(`Invalid role: ${role}. Must be one of: student, institution, employer`);
     }
 
-    const tx = await contract.registerUser(roleValue, "");
+    // solve error.1 (option)
+    // const overrides = {
+    //   gasLimit: 500000, // Set a specific gas limit
+    // };
+
+    const tx = await contract.registerUser(roleValue, ""/*, overrides*/);
     await tx.wait();
     return { status: 'success' };
   } catch (error: any) {
@@ -441,4 +453,4 @@ export const enrollStudent = async (examId: string, studentAddress: string) => {
     console.error('Error enrolling student:', error);
     throw error;
   }
-}; 
+};
